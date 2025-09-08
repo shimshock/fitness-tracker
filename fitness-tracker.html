@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Fitness Tracker</title>
+    <meta name="description" content="Track your fitness goals privately">
+    <meta name="theme-color" content="#2563eb">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json,{
+        'name': 'My Fitness Tracker',
+        'short_name': 'Fitness',
+        'description': 'Track your fitness goals privately',
+        'start_url': '/',
+        'display': 'standalone',
+        'background_color': '#ffffff',
+        'theme_color': '#2563eb',
+        'icons': [
+            {
+                'src': 'data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><text y=\".9em\" font-size=\"90\">💪</text></svg>',
+                'sizes': '192x192',
+                'type': 'image/svg+xml'
+            }
+        ]
+    }">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #eff6ff 0%, #f3e8ff 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem 0;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .goals-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .goal-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f3f4f6;
+        }
+        
+        .goal-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .goal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .goal-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .progress-info {
+            margin-bottom: 1rem;
+        }
+        
+        .progress-numbers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 1rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #2563eb;
+            border-radius: 9999px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-fill.complete {
+            background-color: #10b981;
+        }
+        
+        .progress-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+        
+        .progress-percentage {
+            font-weight: 600;
+            color: #2563eb;
+        }
+        
+        .progress-percentage.complete {
+            color: #059669;
+        }
+        
+        .achievement-badge {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        
+        .log-button {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto 2rem;
+            background-color: #2563eb;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .log-button:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .log-button:active {
+            transform: scale(0.98);
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid #dbeafe;
+        }
+        
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-save {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background-color: #059669;
+        }
+        
+        .btn-cancel {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background-color: #4b5563;
+        }
+        
+        .recent-entries {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f3f4f6;
+        }
+        
+        .recent-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .recent-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .entry:last-child {
+            margin-bottom: 0;
+        }
+        
+        .entry-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .entry-date {
+            font-weight: 500;
+        }
+        
+        .entry-type {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .entry-amount {
+            font-weight: 700;
+            color: #2563eb;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .install-prompt {
+            background: #2563eb;
+            color: white;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .install-button {
+            background: white;
+            color: #2563eb;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .goal-card {
+                padding: 1rem;
+            }
+            
+            .form-container {
+                padding: 1rem;
+            }
+        }
+        
+        /* PWA styling for status bar */
+        @media (display-mode: standalone) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Install Prompt -->
+        <div id="installPrompt" class="install-prompt hidden">
+            <div>📱 Install this app on your phone for easy access!</div>
+            <button id="installButton" class="install-button">Install App</button>
+        </div>
+        
+        <!-- Header -->
+        <div class="header">
+            <h1>💪 My Fitness Goals 2025-2026</h1>
+            <p id="dateInfo">Loading...</p>
+        </div>
+        
+        <!-- Goals Grid -->
+        <div class="goals-grid">
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-title">🏃‍♀️ Running</div>
+                    <div class="goal-icon">🎯</div>
+                </div>
+                <div class="progress-info">
+                    <div class="progress-numbers">
+                        <span><span id="runningCurrent">0</span> miles</span>
+                        <span>500 miles</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="runningProgress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="progress-footer">
+                    <span id="runningPercentage" class="progress-percentage">0% Complete</span>
+                    <span id="runningBadge" class="achievement-badge hidden">🎉 GOAL ACHIEVED!</span>
+                </div>
+            </div>
+            
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-title">💪 Push-ups</div>
+                    <div class="goal-icon">🎯</div>
+                </div>
+                <div class="progress-info">
+                    <div class="progress-numbers">
+                        <span><span id="pushupsCurrent">0</span> reps</span>
+                        <span>10,000 reps</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="pushupsProgress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="progress-footer">
+                    <span id="pushupsPercentage" class="progress-percentage">0% Complete</span>
+                    <span id="pushupsBadge" class="achievement-badge hidden">🎉 GOAL ACHIEVED!</span>
+                </div>
+            </div>
+            
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-title">🦵 Air Squats</div>
+                    <div class="goal-icon">🎯</div>
+                </div>
+                <div class="progress-info">
+                    <div class="progress-numbers">
+                        <span><span id="squatsCurrent">0</span> reps</span>
+                        <span>20,000 reps</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="squatsProgress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="progress-footer">
+                    <span id="squatsPercentage" class="progress-percentage">0% Complete</span>
+                    <span id="squatsBadge" class="achievement-badge hidden">🎉 GOAL ACHIEVED!</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Log Button -->
+        <button id="logButton" class="log-button">
+            <span>➕</span>
+            <span>Log Exercise</span>
+        </button>
+        
+        <!-- Form -->
+        <div id="formContainer" class="form-container hidden">
+            <h3 class="form-title">Log Your Exercise</h3>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" id="dateInput" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Exercise Type</label>
+                <select id="typeSelect" class="form-select">
+                    <option value="running">Running (miles)</option>
+                    <option value="pushups">Push-ups (reps)</option>
+                    <option value="squats">Air Squats (reps)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" id="amountLabel">Amount (miles)</label>
+                <input type="number" step="0.1" id="amountInput" class="form-input" placeholder="Enter amount">
+            </div>
+            <div class="form-buttons">
+                <button id="saveButton" class="btn btn-save">
+                    <span>💾</span>
+                    <span>Save Entry</span>
+                </button>
+                <button id="cancelButton" class="btn btn-cancel">Cancel</button>
+            </div>
+        </div>
+        
+        <!-- Recent Entries -->
+        <div id="recentEntries" class="recent-entries hidden">
+            <div class="recent-header">
+                <span>📈</span>
+                <h3 class="recent-title">Recent Entries</h3>
+            </div>
+            <div id="entriesList"></div>
+            <div id="totalEntries" style="text-align: center; margin-top: 1rem; color: #6b7280; font-size: 0.875rem;"></div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Your data is stored locally on your device - completely private! 🔒</p>
+        </div>
+    </div>
+
+    <script>
+        // Goals configuration
+        const GOALS = {
+            running: { target: 500, unit: 'miles', label: 'Running' },
+            pushups: { target: 10000, unit: 'reps', label: 'Push-ups' },
+            squats: { target: 20000, unit: 'reps', label: 'Air Squats' }
+        };
+
+        const GOAL_START = new Date('2025-09-01');
+        const GOAL_END = new Date('2026-09-01');
+
+        // State
+        let exercises = [];
+        let showForm = false;
+
+        // PWA Installation
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installButton = document.getElementById('installButton');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.classList.remove('hidden');
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installPrompt.classList.add('hidden');
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript,console.log("SW registered");');
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const savedData = localStorage.getItem('fitness-tracker-data');
+            if (savedData) {
+                exercises = JSON.parse(savedData);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('fitness-tracker-data', JSON.stringify(exercises));
+        }
+
+        // Calculate progress
+        function calculateProgress() {
+            const progress = {
+                running: 0,
+                pushups: 0,
+                squats: 0
+            };
+
+            exercises.forEach(exercise => {
+                progress[exercise.type] += exercise.amount;
+            });
+
+            return progress;
+        }
+
+        // Update UI
+        function updateUI() {
+            const progress = calculateProgress();
+
+            // Update date info
+            const today = new Date();
+            const daysRemaining = Math.max(0, Math.ceil((GOAL_END - today) / (1000 * 60 * 60 * 24)));
+            const totalDays = Math.ceil((GOAL_END - GOAL_START) / (1000 * 60 * 60 * 24));
+            const daysElapsed = totalDays - daysRemaining;
+            
+            document.getElementById('dateInfo').textContent = 
+                `September 1, 2025 → September 1, 2026 • ${daysElapsed} days in • ${daysRemaining} days remaining`;
+
+            // Update progress bars
+            Object.keys(GOALS).forEach(type => {
+                const current = progress[type];
+                const target = GOALS[type].target;
+                const percentage = Math.min((current / target) * 100, 100);
+                const isComplete = current >= target;
+
+                document.getElementById(`${type}Current`).textContent = current.toLocaleString();
+                document.getElementById(`${type}Progress`).style.width = `${percentage}%`;
+                document.getElementById(`${type}Percentage`).textContent = `${percentage.toFixed(1)}% Complete`;
+                
+                if (isComplete) {
+                    document.getElementById(`${type}Progress`).classList.add('complete');
+                    document.getElementById(`${type}Percentage`).classList.add('complete');
+                    document.getElementById(`${type}Badge`).classList.remove('hidden');
+                } else {
+                    document.getElementById(`${type}Progress`).classList.remove('complete');
+                    document.getElementById(`${type}Percentage`).classList.remove('complete');
+                    document.getElementById(`${type}Badge`).classList.add('hidden');
+                }
+            });
+
+            // Update recent entries
+            if (exercises.length > 0) {
+                const recentEntries = exercises
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 5);
+
+                let entriesHTML = '';
+                recentEntries.forEach(entry => {
+                    const date = new Date(entry.date).toLocaleDateString();
+                    entriesHTML += `
+                        <div class="entry">
+                            <div class="entry-left">
+                                <span>📅</span>
+                                <div>
+                                    <div class="entry-date">${date}</div>
+                                    <div class="entry-type">${GOALS[entry.type].label}</div>
+                                </div>
+                            </div>
+                            <div class="entry-amount">${entry.amount} ${GOALS[entry.type].unit}</div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('entriesList').innerHTML = entriesHTML;
+                document.getElementById('totalEntries').textContent = `Total entries: ${exercises.length}`;
+                document.getElementById('recentEntries').classList.remove('hidden');
+            }
+        }
+
+        // Form handling
+        document.getElementById('logButton').addEventListener('click', () => {
+            showForm = !showForm;
+            document.getElementById('formContainer').classList.toggle('hidden');
+            if (showForm) {
+                document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+            }
+        });
+
+        document.getElementById('typeSelect').addEventListener('change', (e) => {
+            const type = e.target.value;
+            const unit = GOALS[type].unit;
+            document.getElementById('amountLabel').textContent = `Amount (${unit})`;
+            document.getElementById('amountInput').placeholder = `Enter ${unit}`;
+        });
+
+        document.getElementById('saveButton').addEventListener('click', () => {
+            const date = document.getElementById('dateInput').value;
+            const type = document.getElementById('typeSelect').value;
+            const amount = parseFloat(document.getElementById('amountInput').value);
+
+            if (!date || !amount || amount <= 0) {
+                alert('Please enter a valid date and amount');
+                return;
+            }
+
+            const newExercise = {
+                id: Date.now(),
+                date: date,
+                type: type,
+                amount: amount,
+                timestamp: new Date().toISOString()
+            };
+
+            exercises.push(newExercise);
+            saveData();
+            updateUI();
+
+            // Reset form
+            document.getElementById('amountInput').value = '';
+            document.getElementById('formContainer').classList.add('hidden');
+            showForm = false;
+
+            // Success feedback
+            const button = document.getElementById('saveButton');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span>✅</span><span>Saved!</span>';
+            setTimeout(() => {
+                button.innerHTML = originalText;
+            }, 1500);
+        });
+
+        document.getElementById('cancelButton').addEventListener('click', () => {
+            document.getElementById('formContainer').classList.add('hidden');
+            showForm = false;
+            document.getElementById('amountInput').value = '';
+        });
+
+        // Initialize
+        loadData();
+        updateUI();
+
+        // Prevent zoom on input focus (iOS)
+        document.addEventListener('touchstart', function() {}, true);
+    </script>
+</body>
+</html>
