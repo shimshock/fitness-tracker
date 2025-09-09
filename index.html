@@ -908,19 +908,7 @@
             }
         }
 
-        // Update sync status
-        function updateSyncStatus(type, message) {
-            const statusElement = document.getElementById('syncStatus');
-            const textElement = document.getElementById('syncText');
-            
-            // Reset classes
-            statusElement.className = 'sync-status';
-            if (type === 'error') statusElement.classList.add('error');
-            if (type === 'warning') statusElement.classList.add('warning');
-            
-            textElement.textContent = message;
-            console.log('Status:', message);
-        }
+
 
         // PWA Installation
         let deferredPrompt;
