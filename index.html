@@ -1,112 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>My Fitness Tracker</title>
-  <meta name="description" content="Track your fitness goals with Google Drive sync" />
-  <meta name="theme-color" content="#2563eb" />
+  <meta name="description" content="Track your fitness goals with Google Drive sync"/>
+  <meta name="theme-color" content="#2563eb"/>
 
-  <!-- PWA Icons (emoji) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-      background:linear-gradient(135deg,#eff6ff 0%,#f3e8ff 100%);
-      min-height:100vh; padding:1rem; color:#1f2937; overflow-x:hidden;
-    }
-    .container { max-width:100%; margin:0 auto; }
-    .header { text-align:center; margin-bottom:2rem; padding:1rem 0; }
-    .header h1 { font-size:2rem; font-weight:800; color:#1f2937; margin-bottom:.5rem; }
-    .header p { color:#6b7280; font-size:.9rem; }
-
-    .google-auth { background:#fff; border-radius:1rem; padding:1.5rem; margin-bottom:2rem;
-      box-shadow:0 4px 6px -1px rgba(0,0,0,.1); border:2px solid #f59e0b; text-align:center; }
-    .google-signin-btn { background:#4285f4; color:#fff; border:none; padding:1rem 2rem; border-radius:.5rem;
-      font-size:1rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem; margin:1rem auto 0; }
-    .google-signin-btn:hover { background:#3367d6; }
-    .google-signin-btn:disabled { background:#9ca3af; cursor:not-allowed; }
-
-    .sync-status { background:#dcfce7; color:#166534; padding:.5rem 1rem; border-radius:.5rem; font-size:.875rem;
-      display:flex; align-items:center; justify-content:center; gap:.5rem; margin-bottom:1rem; text-align:center; }
-    .sync-status.error { background:#fef2f2; color:#dc2626; }
-    .sync-status.warning { background:#fefbf2; color:#d97706; }
-
-    .weekly-summary { background:#fff; border-radius:1rem; padding:1.5rem; margin-bottom:2rem;
-      box-shadow:0 4px 6px -1px rgba(0,0,0,.1); border:2px solid #e5e7eb; }
-    .weekly-title { font-size:1.25rem; font-weight:700; color:#1f2937; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
-    .weekly-item { display:flex; justify-content:space-between; align-items:center; padding:.75rem; margin-bottom:.5rem; border-radius:.5rem; background:#f9fafb; }
-    .weekly-item:last-child { margin-bottom:0; }
-    .weekly-exercise { font-weight:600; color:#1f2937; }
-    .weekly-status { font-size:.875rem; font-weight:600; padding:.25rem .75rem; border-radius:9999px; }
-    .status-on-pace { background:#dcfce7; color:#166534; }
-    .status-behind { background:#fef2f2; color:#dc2626; }
-    .status-ahead { background:#dbeafe; color:#2563eb; }
-
-    .goals-grid { display:grid; gap:1rem; margin-bottom:2rem; }
-    .goal-card { background:#fff; border-radius:1rem; padding:1.5rem; box-shadow:0 4px 6px -1px rgba(0,0,0,.1); border:2px solid #f3f4f6; }
-    .goal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-    .goal-title { font-size:1.25rem; font-weight:700; color:#1f2937; }
-    .goal-icon { width:1.5rem; height:1.5rem; }
-    .progress-info { margin-bottom:1rem; }
-    .progress-numbers { display:flex; justify-content:space-between; font-size:.875rem; color:#6b7280; margin-bottom:.5rem; }
-    .progress-bar { width:100%; height:1rem; background:#e5e7eb; border-radius:9999px; overflow:hidden; }
-    .progress-fill { height:100%; background:#2563eb; border-radius:9999px; transition:width .5s ease; }
-    .progress-fill.complete { background:#10b981; }
-    .progress-footer { display:flex; justify-content:space-between; align-items:center; font-size:.875rem; margin-top:1rem; }
-    .progress-percentage { font-weight:600; color:#2563eb; }
-    .progress-percentage.complete { color:#059669; }
-    .achievement-badge { background:#dcfce7; color:#166534; padding:.25rem .75rem; border-radius:9999px; font-size:.75rem; font-weight:700; }
-
-    .log-button { display:block; width:100%; max-width:300px; margin:0 auto 2rem; background:#2563eb; color:#fff; padding:1rem 2rem; border-radius:1rem;
-      font-size:1.125rem; font-weight:600; border:none; cursor:pointer; transition:background-color .2s; display:flex; align-items:center; justify-content:center; gap:.5rem; }
-    .log-button:hover { background:#1d4ed8; }
-    .log-button:active { transform:scale(.98); }
-
-    .form-container { background:#fff; border-radius:1rem; padding:1.5rem; margin-bottom:2rem; box-shadow:0 4px 6px -1px rgba(0,0,0,.1); border:2px solid #dbeafe; }
-    .form-title { font-size:1.5rem; font-weight:700; color:#1f2937; text-align:center; margin-bottom:1.5rem; }
-    .form-group { margin-bottom:1rem; }
-    .form-label { display:block; font-size:.875rem; font-weight:500; color:#374151; margin-bottom:.5rem; }
-    .form-input,.form-select { width:100%; padding:.75rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:1rem; transition:border-color .2s, box-shadow .2s; }
-    .form-input:focus,.form-select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
-    .form-buttons { display:flex; gap:.75rem; }
-    .btn { flex:1; padding:.75rem 1rem; border-radius:.5rem; font-weight:600; border:none; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; gap:.5rem; }
-    .btn-save { background:#10b981; color:#fff; }
-    .btn-save:hover { background:#059669; }
-    .btn-cancel { background:#6b7280; color:#fff; }
-    .btn-cancel:hover { background:#4b5563; }
-
-    .recent-entries { background:#fff; border-radius:1rem; padding:1.5rem; box-shadow:0 4px 6px -1px rgba(0,0,0,.1); border:2px solid #f3f4f6; }
-    .recent-header { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem; }
-    .recent-title { font-size:1.25rem; font-weight:700; color:#1f2937; }
-    .entry { display:flex; justify-content:space-between; align-items:center; padding:.75rem; background:#f9fafb; border-radius:.5rem; margin-bottom:.75rem; }
-    .entry:last-child { margin-bottom:0; }
-    .entry-left { display:flex; align-items:center; gap:.75rem; }
-    .entry-date { font-weight:500; }
-    .entry-type { color:#6b7280; font-size:.875rem; }
-    .entry-amount { font-weight:700; color:#2563eb; }
-
-    .footer { text-align:center; margin-top:2rem; color:#6b7280; font-size:.875rem; }
-    .hidden { display:none; }
-
-    .install-prompt { background:#2563eb; color:#fff; padding:1rem; border-radius:1rem; margin-bottom:1rem; text-align:center; }
-    .install-button { background:#fff; color:#2563eb; border:none; padding:.5rem 1rem; border-radius:.5rem; font-weight:600; cursor:pointer; margin-top:.5rem; }
-    .manual-install { background:#f59e0b; color:#fff; padding:1rem; border-radius:1rem; margin-bottom:1rem; text-align:center; font-size:.9rem; }
-
-    @media (max-width:640px){
-      body{ padding:.5rem; }
-      .header h1{ font-size:1.75rem; }
-      .goal-card,.form-container{ padding:1rem; }
-      .weekly-item{ flex-direction:column; align-items:flex-start; gap:.5rem; }
-    }
-    @media (display-mode:standalone){
-      body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
-      .manual-install{ display:none; }
-    }
+    /* --- styles unchanged for brevity (same as before) --- */
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#eff6ff 0%,#f3e8ff 100%);min-height:100vh;padding:1rem;color:#1f2937;overflow-x:hidden}
+    .container{max-width:100%;margin:0 auto}
+    .header{text-align:center;margin-bottom:2rem;padding:1rem 0}
+    .header h1{font-size:2rem;font-weight:800;color:#1f2937;margin-bottom:.5rem}
+    .header p{color:#6b7280;font-size:.9rem}
+    .google-auth{background:#fff;border-radius:1rem;padding:1.5rem;margin-bottom:2rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:2px solid #f59e0b;text-align:center}
+    .google-signin-btn{background:#4285f4;color:#fff;border:none;padding:1rem 2rem;border-radius:.5rem;font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;margin:1rem auto 0}
+    .google-signin-btn:hover{background:#3367d6}
+    .google-signin-btn:disabled{background:#9ca3af;cursor:not-allowed}
+    .sync-status{background:#dcfce7;color:#166534;padding:.5rem 1rem;border-radius:.5rem;font-size:.875rem;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:1rem;text-align:center}
+    .sync-status.error{background:#fef2f2;color:#dc2626}
+    .sync-status.warning{background:#fefbf2;color:#d97706}
+    .weekly-summary{background:#fff;border-radius:1rem;padding:1.5rem;margin-bottom:2rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:2px solid #e5e7eb}
+    .weekly-title{font-size:1.25rem;font-weight:700;color:#1f2937;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+    .weekly-item{display:flex;justify-content:space-between;align-items:center;padding:.75rem;margin-bottom:.5rem;border-radius:.5rem;background:#f9fafb}
+    .weekly-item:last-child{margin-bottom:0}
+    .weekly-exercise{font-weight:600;color:#1f2937}
+    .weekly-status{font-size:.875rem;font-weight:600;padding:.25rem .75rem;border-radius:9999px}
+    .status-on-pace{background:#dcfce7;color:#166534}
+    .status-behind{background:#fef2f2;color:#dc2626}
+    .status-ahead{background:#dbeafe;color:#2563eb}
+    .goals-grid{display:grid;gap:1rem;margin-bottom:2rem}
+    .goal-card{background:#fff;border-radius:1rem;padding:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:2px solid #f3f4f6}
+    .goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    .goal-title{font-size:1.25rem;font-weight:700;color:#1f2937}
+    .goal-icon{width:1.5rem;height:1.5rem}
+    .progress-info{margin-bottom:1rem}
+    .progress-numbers{display:flex;justify-content:space-between;font-size:.875rem;color:#6b7280;margin-bottom:.5rem}
+    .progress-bar{width:100%;height:1rem;background:#e5e7eb;border-radius:9999px;overflow:hidden}
+    .progress-fill{height:100%;background:#2563eb;border-radius:9999px;transition:width .5s ease}
+    .progress-fill.complete{background:#10b981}
+    .progress-footer{display:flex;justify-content:space-between;align-items:center;font-size:.875rem;margin-top:1rem}
+    .progress-percentage{font-weight:600;color:#2563eb}
+    .progress-percentage.complete{color:#059669}
+    .achievement-badge{background:#dcfce7;color:#166534;padding:.25rem .75rem;border-radius:9999px;font-size:.75rem;font-weight:700}
+    .log-button{display:block;width:100%;max-width:300px;margin:0 auto 2rem;background:#2563eb;color:#fff;padding:1rem 2rem;border-radius:1rem;font-size:1.125rem;font-weight:600;border:none;cursor:pointer;transition:background-color .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    .log-button:hover{background:#1d4ed8}
+    .log-button:active{transform:scale(.98)}
+    .form-container{background:#fff;border-radius:1rem;padding:1.5rem;margin-bottom:2rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:2px solid #dbeafe}
+    .form-title{font-size:1.5rem;font-weight:700;color:#1f2937;text-align:center;margin-bottom:1.5rem}
+    .form-group{margin-bottom:1rem}
+    .form-label{display:block;font-size:.875rem;font-weight:500;color:#374151;margin-bottom:.5rem}
+    .form-input,.form-select{width:100%;padding:.75rem;border:1px solid #d1d5db;border-radius:.5rem;font-size:1rem;transition:border-color .2s,box-shadow .2s}
+    .form-input:focus,.form-select:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+    .form-buttons{display:flex;gap:.75rem}
+    .btn{flex:1;padding:.75rem 1rem;border-radius:.5rem;font-weight:600;border:none;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    .btn-save{background:#10b981;color:#fff}
+    .btn-save:hover{background:#059669}
+    .btn-cancel{background:#6b7280;color:#fff}
+    .btn-cancel:hover{background:#4b5563}
+    .recent-entries{background:#fff;border-radius:1rem;padding:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:2px solid #f3f4f6}
+    .recent-header{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
+    .recent-title{font-size:1.25rem;font-weight:700;color:#1f2937}
+    .entry{display:flex;justify-content:space-between;align-items:center;padding:.75rem;background:#f9fafb;border-radius:.5rem;margin-bottom:.75rem}
+    .entry:last-child{margin-bottom:0}
+    .entry-left{display:flex;align-items:center;gap:.75rem}
+    .entry-date{font-weight:500}
+    .entry-type{color:#6b7280;font-size:.875rem}
+    .entry-amount{font-weight:700;color:#2563eb}
+    .footer{text-align:center;margin-top:2rem;color:#6b7280;font-size:.875rem}
+    .hidden{display:none}
+    .install-prompt{background:#2563eb;color:#fff;padding:1rem;border-radius:1rem;margin-bottom:1rem;text-align:center}
+    .install-button{background:#fff;color:#2563eb;border:none;padding:.5rem 1rem;border-radius:.5rem;font-weight:600;cursor:pointer;margin-top:.5rem}
+    .manual-install{background:#f59e0b;color:#fff;padding:1rem;border-radius:1rem;margin-bottom:1rem;text-align:center;font-size:.9rem}
+    @media (max-width:640px){body{padding:.5rem}.header h1{font-size:1.75rem}.goal-card,.form-container{padding:1rem}.weekly-item{flex-direction:column;align-items:flex-start;gap:.5rem}}
+    @media (display-mode:standalone){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}.manual-install{display:none}}
   </style>
+
+  <script>
+    /******** Manifest: use absolute start_url (valid for blob base) ********/
+    (function attachManifest(){
+      const startUrl = new URL(location.pathname, location.origin).toString(); // e.g., https://domain/app/
+      const manifest = {
+        name: "My Fitness Tracker",
+        short_name: "Fitness",
+        description: "Track your fitness goals with Google Drive sync",
+        start_url: startUrl,
+        display: "standalone",
+        background_color: "#ffffff",
+        theme_color: "#2563eb",
+        icons: [
+          { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>", sizes:"192x192", type:"image/svg+xml" },
+          { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>", sizes:"512x512", type:"image/svg+xml" }
+        ]
+      };
+      const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = url;
+      document.head.appendChild(link);
+    })();
+  </script>
 </head>
 <body>
   <div class="container">
@@ -116,11 +115,10 @@
       <button id="installButton" class="install-button">Install App</button>
     </div>
 
-    <!-- Manual Install Instructions -->
     <div class="manual-install">
       <div><strong>📱 Install on your phone:</strong></div>
       <div style="margin-top:.5rem;">
-        <strong>iPhone:</strong> Tap Share (⬆️) → "Add to Home Screen"<br>
+        <strong>iPhone:</strong> Tap Share (⬆️) → "Add to Home Screen"<br/>
         <strong>Android:</strong> Menu (⋮) → "Add to Home Screen" or "Install App"
       </div>
     </div>
@@ -133,9 +131,7 @@
     </div>
 
     <!-- Sync Status -->
-    <div id="syncStatus" class="sync-status">
-      <span>⏳</span><span id="syncText">Loading...</span>
-    </div>
+    <div id="syncStatus" class="sync-status"><span>⏳</span><span id="syncText">Loading...</span></div>
 
     <!-- Header -->
     <div class="header">
@@ -223,40 +219,20 @@
       <div id="totalEntries" style="text-align:center;margin-top:1rem;color:#6b7280;font-size:.875rem;"></div>
     </div>
 
-    <!-- Footer -->
     <div class="footer"><p id="footerText">Your data syncs securely with Google Drive - access from any device! 🔒</p></div>
   </div>
 
-  <!-- Google APIs -->
-  <script src="https://apis.google.com/js/api.js" onload="handleGapiLoad()"></script>
-  <script src="https://accounts.google.com/gsi/client" onload="handleGsiLoad()"></script>
-
   <script>
-    /************ Manifest (dynamic) ************/
-    const manifestData = {
-      name:"My Fitness Tracker", short_name:"Fitness", description:"Track your fitness goals with Google Drive sync",
-      start_url:"./", display:"standalone", background_color:"#ffffff", theme_color:"#2563eb",
-      icons:[
-        {src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>", sizes:"192x192", type:"image/svg+xml"},
-        {src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>", sizes:"512x512", type:"image/svg+xml"}
-      ]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
-    const manifestURL = URL.createObjectURL(manifestBlob);
-    const manifestLink = document.createElement('link');
-    manifestLink.rel='manifest'; manifestLink.href=manifestURL; document.head.appendChild(manifestLink);
-
-    /************ UI helpers ************/
-    function updateSyncStatus(kind='normal', text='') {
+    /************ UI + app state (unchanged core logic) ************/
+    function updateSyncStatus(kind='normal', text=''){
       const el = document.getElementById('syncStatus');
       const txt = document.getElementById('syncText');
       el.classList.remove('error','warning');
-      if (kind === 'error') el.classList.add('error');
-      if (kind === 'warning') el.classList.add('warning');
+      if(kind==='error') el.classList.add('error');
+      if(kind==='warning') el.classList.add('warning');
       txt.textContent = text || 'Ready';
     }
 
-    /************ Goals ************/
     const GOALS = {
       running: { target: 500, unit: 'miles', label: 'Running', weeklyTarget: 9.615 },
       pushups: { target: 10000, unit: 'reps', label: 'Push-ups', weeklyTarget: 192.3 },
@@ -265,42 +241,143 @@
     const GOAL_START = new Date('2025-09-01');
     const GOAL_END   = new Date('2026-09-01');
 
-    /************ Google API Config ************/
-    const CLIENT_ID = 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyA9HTdoyDG1ObD8FjsS4ewCQfL6wc4Bzmo'; // fine for demo; lock down in prod
-    const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-    const SCOPES = [
-      'https://www.googleapis.com/auth/spreadsheets',
-      // Optional: allows you to see the file in Drive & manage it as your app:
-      'https://www.googleapis.com/auth/drive.file'
-    ].join(' ');
+    let exercises=[], showForm=false, isSignedIn=false, spreadsheetId=null;
+    let triedRefreshOnce=false;
 
-    /************ State ************/
-    let exercises = [];
-    let showForm = false;
-    let isSignedIn = false;
-    let spreadsheetId = null;
-    let gapiLoaded = false;
-    let gsiLoaded = false;
-    let tokenClient = null;
-    let triedRefreshOnce = false;
+    function formatDateForInput(date){ const d=new Date(date.getTime()-date.getTimezoneOffset()*60000); return d.toISOString().split('T')[0]; }
+    function parseInputDate(s){ const [y,m,d]=s.split('-'); return new Date(y,m-1,d); }
+    function getWeekStart(date){ const d=new Date(date); const day=d.getDay(); const diff=d.getDate()-day+(day===0?-6:1); return new Date(d.setDate(diff)); }
+    function getCurrentWeekSummary(){
+      const currentMonday=getWeekStart(new Date()); const lastWeekMonday=new Date(currentMonday); lastWeekMonday.setDate(lastWeekMonday.getDate()-7);
+      const lastWeekSunday=new Date(lastWeekMonday); lastWeekSunday.setDate(lastWeekSunday.getDate()+6);
+      return {start:lastWeekMonday,end:lastWeekSunday,title:`${lastWeekMonday.toLocaleDateString('en-US',{month:'short',day:'numeric'})} - ${lastWeekSunday.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`};
+    }
+    function calculateWeeklyProgress(){
+      const weekInfo=getCurrentWeekSummary(); const totals={running:0,pushups:0,squats:0};
+      exercises.forEach(e=>{ const d=parseInputDate(e.date); if(d>=weekInfo.start&&d<=weekInfo.end) totals[e.type]+=e.amount; });
+      const statuses={}; Object.keys(GOALS).forEach(t=>{const a=totals[t],tar=GOALS[t].weeklyTarget,b=tar*.05;let s,c,m;
+        if(a>=tar-b&&a<=tar+b){s='On Pace';c='status-on-pace';m=`${a} ${GOALS[t].unit} (Target: ${tar.toFixed(1)})`;}
+        else if(a<tar-b){const behind=(tar-a).toFixed(1);s=`Behind by ${behind} ${GOALS[t].unit}`;c='status-behind';m=`${a} ${GOALS[t].unit} (Target: ${tar.toFixed(1)})`;}
+        else{const ahead=(a-tar).toFixed(1);s=`Ahead by ${ahead} ${GOALS[t].unit}`;c='status-ahead';m=`${a} ${GOALS[t].unit} (Target: ${tar.toFixed(1)})`;}
+        statuses[t]={status:s,statusClass:c,message:m}; });
+      return {weekInfo: getCurrentWeekSummary(), weeklyStatuses: statuses};
+    }
+    function saveData(){ localStorage.setItem('fitness-tracker-data', JSON.stringify(exercises)); }
+    function loadData(){ const s=localStorage.getItem('fitness-tracker-data'); if(s) exercises=JSON.parse(s); updateUI(); }
+    function calculateProgress(){ const p={running:0,pushups:0,squats:0}; exercises.forEach(e=>{p[e.type]+=e.amount}); return p; }
+    function updateUI(){
+      const p=calculateProgress(), today=new Date();
+      const daysRemaining=Math.max(0,Math.ceil((GOAL_END-today)/(1000*60*60*24)));
+      const totalDays=Math.ceil((GOAL_END-GOAL_START)/(1000*60*60*24));
+      const daysElapsed=totalDays-daysRemaining;
+      document.getElementById('dateInfo').textContent=`September 1, 2025 → September 1, 2026 • ${daysElapsed} days in • ${daysRemaining} days remaining`;
 
-    /************ Load handlers for Google libs ************/
-    function handleGapiLoad(){ gapiLoaded = true; maybeEnableGoogleFeatures(); }
-    function handleGsiLoad(){ gsiLoaded = true; maybeEnableGoogleFeatures(); }
+      const {weekInfo,weeklyStatuses}=calculateWeeklyProgress();
+      document.getElementById('weeklyTitle').textContent=`Week of ${weekInfo.title} Summary`;
+      let weeklyHTML=''; Object.keys(GOALS).forEach(t=>{ const emoji=t==='running'?'🏃‍♀️':t==='pushups'?'💪':'🦵'; const s=weeklyStatuses[t];
+        weeklyHTML+=`<div class="weekly-item"><div><div class="weekly-exercise">${emoji} ${GOALS[t].label}</div><div style="font-size:.875rem;color:#6b7280;">${s.message}</div></div><div class="weekly-status ${s.statusClass}">${s.status}</div></div>`; });
+      document.getElementById('weeklyContent').innerHTML=weeklyHTML;
+      document.getElementById('weeklySummary').classList.remove('hidden');
 
-    async function maybeEnableGoogleFeatures(){
-      if(!(gapiLoaded && gsiLoaded)) return;
-      try {
-        initializeGoogleAPI(); // gapi.load uses callback, not a promise
-      } catch (err) {
-        console.error('Failed to initialize Google APIs:', err);
-        updateSyncStatus('warning','⚠️ Google Drive unavailable — using local storage');
+      Object.keys(GOALS).forEach(t=>{
+        const cur=p[t], tar=GOALS[t].target, pct=Math.min((cur/tar)*100,100), done=cur>=tar;
+        document.getElementById(`${t}Current`).textContent=cur.toLocaleString();
+        document.getElementById(`${t}Progress`).style.width=`${pct}%`;
+        document.getElementById(`${t}Percentage`).textContent=`${pct.toFixed(1)}% Complete`;
+        document.getElementById(`${t}Progress`).classList.toggle('complete',done);
+        document.getElementById(`${t}Percentage`).classList.toggle('complete',done);
+        document.getElementById(`${t}Badge`).classList.toggle('hidden',!done);
+      });
+
+      if(exercises.length>0){
+        const recent=exercises.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+        let html=''; recent.forEach(e=>{ const d=parseInputDate(e.date).toLocaleDateString();
+          html+=`<div class="entry"><div class="entry-left"><span>📅</span><div><div class="entry-date">${d}</div><div class="entry-type">${GOALS[e.type].label}</div></div></div><div class="entry-amount">${e.amount} ${GOALS[e.type].unit}</div></div>`;});
+        document.getElementById('entriesList').innerHTML=html;
+        document.getElementById('totalEntries').textContent=`Total entries: ${exercises.length}`;
+        document.getElementById('recentEntries').classList.remove('hidden');
       }
     }
 
+    document.getElementById('logButton').addEventListener('click',()=>{
+      showForm=!showForm; document.getElementById('formContainer').classList.toggle('hidden');
+      if(showForm) document.getElementById('dateInput').value=formatDateForInput(new Date());
+    });
+    document.getElementById('typeSelect').addEventListener('change',e=>{
+      const unit=GOALS[e.target.value].unit;
+      document.getElementById('amountLabel').textContent=`Amount (${unit})`;
+      document.getElementById('amountInput').placeholder=`Enter ${unit}`;
+    });
+    document.getElementById('saveButton').addEventListener('click', async ()=>{
+      const date=document.getElementById('dateInput').value;
+      const type=document.getElementById('typeSelect').value;
+      const amount=parseFloat(document.getElementById('amountInput').value);
+      if(!date||!amount||amount<=0){ alert('Please enter a valid date and amount'); return; }
+      const entry={ id:Date.now(), date, type, amount, timestamp:new Date().toISOString() };
+      exercises.push(entry);
+      if(window.__isSignedIn) { await saveToGoogleSheets(entry); } else { saveData(); }
+      updateUI();
+      document.getElementById('amountInput').value='';
+      document.getElementById('formContainer').classList.add('hidden'); showForm=false;
+      const btn=document.getElementById('saveButton'), orig=btn.innerHTML;
+      btn.innerHTML='<span>✅</span><span>Saved!</span>'; setTimeout(()=>btn.innerHTML=orig,1500);
+    });
+    document.getElementById('cancelButton').addEventListener('click',()=>{
+      document.getElementById('formContainer').classList.add('hidden'); showForm=false;
+      document.getElementById('amountInput').value='';
+    });
+
+    // PWA install
+    let deferredPrompt; const installPrompt=document.getElementById('installPrompt'); const installButton=document.getElementById('installButton');
+    window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; installPrompt.classList.remove('hidden'); });
+    installButton?.addEventListener('click',async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installPrompt.classList.add('hidden'); });
+
+    window.addEventListener('load', ()=>{
+      loadData();
+      updateSyncStatus('normal','📱 Using local storage');
+      setTimeout(()=>{ if(!window.gapi && !window.google){ updateSyncStatus('warning','📱 Local storage only (Google Drive unavailable)'); } },5000);
+    });
+
+    /************ Google APIs: load dynamically AFTER handlers exist ************/
+    const CLIENT_ID = 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+    const API_KEY = 'AIzaSyA9HTdoyDG1ObD8FjsS4ewCQfL6wc4Bzmo';
+    const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+    let tokenClient=null;
+
+    // Expose flags so loaders can flip them safely
+    window.__gapiLoaded = false;
+    window.__gsiLoaded  = false;
+    window.__isSignedIn = false;
+
+    function maybeEnableGoogleFeatures(){
+      if(!(window.__gapiLoaded && window.__gsiLoaded)) return;
+      initializeGoogleAPI();
+    }
+
+    // Define handlers BEFORE injecting scripts
+    window.handleGapiLoad = function(){ window.__gapiLoaded = true; maybeEnableGoogleFeatures(); };
+    window.handleGsiLoad  = function(){ window.__gsiLoaded  = true; maybeEnableGoogleFeatures(); };
+
+    // Inject google scripts with onload wired to our handlers
+    (function loadGoogleScripts(){
+      const s1=document.createElement('script');
+      s1.src='https://apis.google.com/js/api.js';
+      s1.async=true; s1.defer=true;
+      s1.onload=window.handleGapiLoad;
+
+      const s2=document.createElement('script');
+      s2.src='https://accounts.google.com/gsi/client';
+      s2.async=true; s2.defer=true;
+      s2.onload=window.handleGsiLoad;
+
+      document.body.appendChild(s1);
+      document.body.appendChild(s2);
+    })();
+
     function initializeGoogleAPI(){
-      gapi.load('client', async () => {
+      if(!window.gapi) return;
+      gapi.load('client', async ()=>{
         await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
 
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -309,21 +386,20 @@
           callback: handleAuthResponse
         });
 
-        // Try restore access token + spreadsheet id
         const token = localStorage.getItem('google_access_token');
         const savedSpreadsheetId = localStorage.getItem('fitness_spreadsheet_id');
 
-        if (token) {
+        if(token){
           gapi.client.setToken({ access_token: token });
-          isSignedIn = true;
-          if (savedSpreadsheetId) {
+          window.__isSignedIn = isSignedIn = true;
+          if(savedSpreadsheetId){
             spreadsheetId = savedSpreadsheetId;
             await safeLoadFromGoogleSheets();
             updateSyncStatus('normal','☁️ Synced with Google Drive');
           } else {
             await ensureSpreadsheetThenLoad();
           }
-        } else {
+        }else{
           document.getElementById('googleAuth').classList.remove('hidden');
           updateSyncStatus('normal','📱 Ready – Connect Google Drive for sync');
         }
@@ -331,368 +407,107 @@
     }
 
     function handleAuthResponse(resp){
-      if (resp && resp.error !== undefined) {
+      if(resp && resp.error!==undefined){
         console.error('Auth error:', resp.error);
         updateSyncStatus('error','❌ Google authorization failed');
         return;
       }
       const token = (resp && resp.access_token) ? resp.access_token : (gapi.client.getToken()?.access_token || null);
-      if (!token) {
-        updateSyncStatus('error','❌ No access token received');
-        return;
-      }
+      if(!token){ updateSyncStatus('error','❌ No access token received'); return; }
       localStorage.setItem('google_access_token', token);
-      isSignedIn = true;
+      window.__isSignedIn = isSignedIn = true;
       document.getElementById('googleAuth').classList.add('hidden');
       updateSyncStatus('normal','✅ Connecting to Google Drive…');
       ensureSpreadsheetThenLoad();
     }
 
-    document.getElementById('googleSignIn').addEventListener('click', () => {
-      if (!tokenClient) {
-        updateSyncStatus('error','❌ Google Drive not ready — refresh page');
-        return;
-      }
-      // First-time consent; subsequent refreshes will use prompt:''
+    document.getElementById('googleSignIn').addEventListener('click', ()=>{
+      if(!tokenClient){ updateSyncStatus('error','❌ Google Drive not ready — refresh page'); return; }
       tokenClient.requestAccessToken({ prompt: 'consent' });
     });
 
-    /************ Sheets helpers ************/
+    function needsRefresh(error){
+      const status = error?.status || error?.result?.error?.code;
+      return status===401 || status===403;
+    }
+    async function refreshTokenOnce(){
+      if(triedRefreshOnce || !tokenClient) return;
+      triedRefreshOnce=true;
+      try{
+        await tokenClient.requestAccessToken({ prompt: '' });
+        const t=gapi.client.getToken()?.access_token || null;
+        if(t) localStorage.setItem('google_access_token', t);
+      }catch(e){ console.error('Token refresh failed', e); }
+    }
     async function ensureSpreadsheetThenLoad(){
-      // Try localStorage first
       let id = localStorage.getItem('fitness_spreadsheet_id');
-      if (!id) {
-        // Create a fresh spreadsheet
-        try {
+      if(!id){
+        try{
           updateSyncStatus('normal','📊 Creating Google Sheet…');
-          const createRes = await gapi.client.sheets.spreadsheets.create({
-            resource: {
-              properties: { title: 'Fitness Tracker Data' },
-              sheets: [{ properties: { title: 'Exercise Log' } }]
-            }
+          const res=await gapi.client.sheets.spreadsheets.create({
+            resource:{ properties:{title:'Fitness Tracker Data'}, sheets:[{properties:{title:'Exercise Log'}}] }
           });
-          id = createRes.result.spreadsheetId;
-          spreadsheetId = id;
+          id = res.result.spreadsheetId; spreadsheetId=id;
           localStorage.setItem('fitness_spreadsheet_id', id);
-
-          // Add headers
           await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: id,
-            range: 'Exercise Log!A1:D1',
-            valueInputOption: 'RAW',
-            resource: { values: [['Date','Exercise Type','Amount','Timestamp']] }
+            spreadsheetId:id, range:'Exercise Log!A1:D1', valueInputOption:'RAW',
+            resource:{ values:[['Date','Exercise Type','Amount','Timestamp']] }
           });
-
           updateSyncStatus('normal','☁️ Sheet created — syncing…');
           await safeLoadFromGoogleSheets();
-        } catch (error) {
-          console.error('Error creating spreadsheet:', error);
-          // If unauthorized, try a silent refresh once
-          if (needsRefresh(error)) {
-            await refreshTokenOnce();
-            return ensureSpreadsheetThenLoad();
-          }
+        }catch(err){
+          console.error('Create sheet error:', err);
+          if(needsRefresh(err)){ await refreshTokenOnce(); return ensureSpreadsheetThenLoad(); }
           updateSyncStatus('error','❌ Failed to create Google Sheet');
         }
-      } else {
-        spreadsheetId = id;
+      }else{
+        spreadsheetId=id;
         await safeLoadFromGoogleSheets();
       }
     }
-
-    function needsRefresh(error){
-      const status = error?.status || error?.result?.error?.code;
-      return status === 401 || status === 403;
-    }
-
-    async function refreshTokenOnce(){
-      if (triedRefreshOnce || !tokenClient) return;
-      triedRefreshOnce = true;
-      try {
-        await tokenClient.requestAccessToken({ prompt: '' });
-        const token = gapi.client.getToken()?.access_token || null;
-        if (token) localStorage.setItem('google_access_token', token);
-      } catch (e) {
-        console.error('Token refresh failed', e);
-      }
-    }
-
     async function safeLoadFromGoogleSheets(){
-      try {
-        await loadFromGoogleSheets();
-      } catch (error) {
-        console.error('Error loading from sheets:', error);
-        if (needsRefresh(error)) {
-          await refreshTokenOnce();
-          await loadFromGoogleSheets();
-        } else {
-          throw error;
-        }
+      try{ await loadFromGoogleSheets(); }
+      catch(err){
+        console.error('Load error:', err);
+        if(needsRefresh(err)){ await refreshTokenOnce(); await loadFromGoogleSheets(); }
+        else{ updateSyncStatus('warning','⚠️ Sync warning — using local data'); loadData(); }
       }
     }
-
     async function loadFromGoogleSheets(){
-      if (!spreadsheetId) {
-        const saved = localStorage.getItem('fitness_spreadsheet_id');
-        if (!saved) return;
-        spreadsheetId = saved;
+      if(!spreadsheetId){
+        const saved=localStorage.getItem('fitness_spreadsheet_id'); if(!saved) return;
+        spreadsheetId=saved;
       }
-      const response = await gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'Exercise Log!A2:D'
-      });
-
-      if (response.result.values) {
-        exercises = response.result.values.map(row => ({
-          id: new Date(row[3]).getTime(),
-          date: row[0],
-          type: row[1],
-          amount: parseFloat(row[2]),
-          timestamp: row[3]
-        }));
+      const res=await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId, range:'Exercise Log!A2:D' });
+      if(res.result.values){
+        exercises = res.result.values.map(r=>({ id:new Date(r[3]).getTime(), date:r[0], type:r[1], amount:parseFloat(r[2]), timestamp:r[3] }));
       }
       updateUI();
       updateSyncStatus('normal','☁️ Synced with Google Drive');
     }
-
-    async function saveToGoogleSheets(newExercise){
-      if (!spreadsheetId || !isSignedIn) {
-        saveData(); // Fallback local
-        return;
-      }
-      try {
+    async function saveToGoogleSheets(x){
+      if(!spreadsheetId || !isSignedIn){ saveData(); return; }
+      try{
         await gapi.client.sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range: 'Exercise Log!A:D',
-          valueInputOption: 'RAW',
-          resource: { values: [[
-            newExercise.date,
-            newExercise.type,
-            newExercise.amount,
-            newExercise.timestamp
-          ]] }
+          spreadsheetId, range:'Exercise Log!A:D', valueInputOption:'RAW',
+          resource:{ values:[[x.date,x.type,x.amount,x.timestamp]] }
         });
         updateSyncStatus('normal','✅ Saved to Google Drive');
-      } catch (error) {
-        console.error('Error saving to sheets:', error);
-        if (needsRefresh(error)) {
+      }catch(err){
+        console.error('Append error:', err);
+        if(needsRefresh(err)){
           await refreshTokenOnce();
-          // try one more time
-          try {
+          try{
             await gapi.client.sheets.spreadsheets.values.append({
-              spreadsheetId,
-              range: 'Exercise Log!A:D',
-              valueInputOption: 'RAW',
-              resource: { values: [[
-                newExercise.date,
-                newExercise.type,
-                newExercise.amount,
-                newExercise.timestamp
-              ]] }
+              spreadsheetId, range:'Exercise Log!A:D', valueInputOption:'RAW',
+              resource:{ values:[[x.date,x.type,x.amount,x.timestamp]] }
             });
-            updateSyncStatus('normal','✅ Saved to Google Drive');
-            return;
-          } catch (e2) {
-            console.error('Retry failed:', e2);
-          }
+            updateSyncStatus('normal','✅ Saved to Google Drive'); return;
+          }catch(e2){ console.error('Retry failed:', e2); }
         }
-        updateSyncStatus('warning','⚠️ Saved locally (sync failed)');
-        saveData();
+        updateSyncStatus('warning','⚠️ Saved locally (sync failed)'); saveData();
       }
     }
-
-    /************ PWA Install ************/
-    let deferredPrompt;
-    const installPrompt = document.getElementById('installPrompt');
-    const installButton = document.getElementById('installButton');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installPrompt.classList.remove('hidden');
-    });
-    installButton?.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      installPrompt.classList.add('hidden');
-    });
-
-    /************ Date utils ************/
-    function formatDateForInput(date){
-      const local = new Date(date.getTime() - date.getTimezoneOffset()*60000);
-      return local.toISOString().split('T')[0];
-    }
-    function parseInputDate(dateString){
-      const [y,m,d] = dateString.split('-'); return new Date(y, m-1, d);
-    }
-
-    /************ Weekly calc ************/
-    function getWeekStart(date){
-      const d = new Date(date); const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      return new Date(d.setDate(diff));
-    }
-    function getCurrentWeekSummary(){
-      const today = new Date();
-      const currentMonday = getWeekStart(today);
-      const lastWeekMonday = new Date(currentMonday); lastWeekMonday.setDate(lastWeekMonday.getDate()-7);
-      const lastWeekSunday = new Date(lastWeekMonday); lastWeekSunday.setDate(lastWeekSunday.getDate()+6);
-      return {
-        start:lastWeekMonday, end:lastWeekSunday,
-        title:`${lastWeekMonday.toLocaleDateString('en-US',{month:'short',day:'numeric'})} - ${lastWeekSunday.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`
-      };
-    }
-    function calculateWeeklyProgress(){
-      const weekInfo = getCurrentWeekSummary();
-      const weeklyTotals = { running:0, pushups:0, squats:0 };
-      exercises.forEach(ex => {
-        const d = parseInputDate(ex.date);
-        if (d >= weekInfo.start && d <= weekInfo.end) weeklyTotals[ex.type] += ex.amount;
-      });
-      const weeklyStatuses = {};
-      Object.keys(GOALS).forEach(type => {
-        const actual = weeklyTotals[type]; const target = GOALS[type].weeklyTarget; const buffer = target*0.05;
-        let status, statusClass, message;
-        if (actual >= target-buffer && actual <= target+buffer){
-          status = 'On Pace'; statusClass='status-on-pace'; message = `${actual} ${GOALS[type].unit} (Target: ${target.toFixed(1)})`;
-        } else if (actual < target-buffer){
-          const behind = (target-actual).toFixed(1); status = `Behind by ${behind} ${GOALS[type].unit}`;
-          statusClass='status-behind'; message = `${actual} ${GOALS[type].unit} (Target: ${target.toFixed(1)})`;
-        } else {
-          const ahead = (actual-target).toFixed(1); status = `Ahead by ${ahead} ${GOALS[type].unit}`;
-          statusClass='status-ahead'; message = `${actual} ${GOALS[type].unit} (Target: ${target.toFixed(1)})`;
-        }
-        weeklyStatuses[type] = { status, statusClass, message };
-      });
-      return { weekInfo, weeklyStatuses };
-    }
-
-    /************ Local data ************/
-    function loadData(){
-      const saved = localStorage.getItem('fitness-tracker-data');
-      if (saved) exercises = JSON.parse(saved);
-      updateUI();
-    }
-    function saveData(){
-      localStorage.setItem('fitness-tracker-data', JSON.stringify(exercises));
-    }
-    function calculateProgress(){
-      const p = { running:0, pushups:0, squats:0 };
-      exercises.forEach(ex => { p[ex.type] += ex.amount; }); return p;
-    }
-
-    /************ UI update ************/
-    function updateUI(){
-      const progress = calculateProgress();
-      const today = new Date();
-      const daysRemaining = Math.max(0, Math.ceil((GOAL_END - today)/(1000*60*60*24)));
-      const totalDays = Math.ceil((GOAL_END - GOAL_START)/(1000*60*60*24));
-      const daysElapsed = totalDays - daysRemaining;
-      document.getElementById('dateInfo').textContent = `September 1, 2025 → September 1, 2026 • ${daysElapsed} days in • ${daysRemaining} days remaining`;
-
-      const { weekInfo, weeklyStatuses } = calculateWeeklyProgress();
-      document.getElementById('weeklyTitle').textContent = `Week of ${weekInfo.title} Summary`;
-
-      let weeklyHTML = '';
-      Object.keys(GOALS).forEach(type => {
-        const emoji = type === 'running' ? '🏃‍♀️' : type === 'pushups' ? '💪' : '🦵';
-        const s = weeklyStatuses[type];
-        weeklyHTML += `
-          <div class="weekly-item">
-            <div>
-              <div class="weekly-exercise">${emoji} ${GOALS[type].label}</div>
-              <div style="font-size:.875rem;color:#6b7280;">${s.message}</div>
-            </div>
-            <div class="weekly-status ${s.statusClass}">${s.status}</div>
-          </div>`;
-      });
-      document.getElementById('weeklyContent').innerHTML = weeklyHTML;
-      document.getElementById('weeklySummary').classList.remove('hidden');
-
-      Object.keys(GOALS).forEach(type => {
-        const current = progress[type]; const target = GOALS[type].target;
-        const pct = Math.min((current/target)*100, 100); const complete = current >= target;
-        document.getElementById(`${type}Current`).textContent = current.toLocaleString();
-        document.getElementById(`${type}Progress`).style.width = `${pct}%`;
-        document.getElementById(`${type}Percentage`).textContent = `${pct.toFixed(1)}% Complete`;
-        document.getElementById(`${type}Progress`).classList.toggle('complete', complete);
-        document.getElementById(`${type}Percentage`).classList.toggle('complete', complete);
-        document.getElementById(`${type}Badge`).classList.toggle('hidden', !complete);
-      });
-
-      if (exercises.length > 0){
-        const recent = exercises.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
-        let entriesHTML = '';
-        recent.forEach(entry => {
-          const date = parseInputDate(entry.date).toLocaleDateString();
-          entriesHTML += `
-            <div class="entry">
-              <div class="entry-left">
-                <span>📅</span>
-                <div>
-                  <div class="entry-date">${date}</div>
-                  <div class="entry-type">${GOALS[entry.type].label}</div>
-                </div>
-              </div>
-              <div class="entry-amount">${entry.amount} ${GOALS[entry.type].unit}</div>
-            </div>`;
-        });
-        document.getElementById('entriesList').innerHTML = entriesHTML;
-        document.getElementById('totalEntries').textContent = `Total entries: ${exercises.length}`;
-        document.getElementById('recentEntries').classList.remove('hidden');
-      }
-    }
-
-    /************ Form handling ************/
-    document.getElementById('logButton').addEventListener('click', () => {
-      showForm = !showForm;
-      document.getElementById('formContainer').classList.toggle('hidden');
-      if (showForm) document.getElementById('dateInput').value = formatDateForInput(new Date());
-    });
-
-    document.getElementById('typeSelect').addEventListener('change', (e) => {
-      const type = e.target.value; const unit = GOALS[type].unit;
-      document.getElementById('amountLabel').textContent = `Amount (${unit})`;
-      document.getElementById('amountInput').placeholder = `Enter ${unit}`;
-    });
-
-    document.getElementById('saveButton').addEventListener('click', async () => {
-      const date = document.getElementById('dateInput').value;
-      const type = document.getElementById('typeSelect').value;
-      const amount = parseFloat(document.getElementById('amountInput').value);
-      if (!date || !amount || amount <= 0) { alert('Please enter a valid date and amount'); return; }
-
-      const newExercise = { id: Date.now(), date, type, amount, timestamp: new Date().toISOString() };
-      exercises.push(newExercise);
-
-      if (isSignedIn) { await saveToGoogleSheets(newExercise); } else { saveData(); }
-      updateUI();
-
-      document.getElementById('amountInput').value = '';
-      document.getElementById('formContainer').classList.add('hidden'); showForm = false;
-
-      const btn = document.getElementById('saveButton'); const orig = btn.innerHTML;
-      btn.innerHTML = '<span>✅</span><span>Saved!</span>'; setTimeout(() => { btn.innerHTML = orig; }, 1500);
-    });
-
-    document.getElementById('cancelButton').addEventListener('click', () => {
-      document.getElementById('formContainer').classList.add('hidden'); showForm = false;
-      document.getElementById('amountInput').value = '';
-    });
-
-    /************ App init ************/
-    window.addEventListener('load', () => {
-      loadData();
-      updateSyncStatus('normal','📱 Using local storage');
-      setTimeout(() => {
-        if (!gapiLoaded && !gsiLoaded) updateSyncStatus('warning','📱 Local storage only (Google Drive unavailable)');
-      }, 5000);
-    });
-
-    // Prevent zoom on input focus (iOS)
-    document.addEventListener('touchstart', function(){}, true);
   </script>
 </body>
 </html>
