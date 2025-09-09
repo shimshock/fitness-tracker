@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Fitness Tracker</title>
-    <meta name="description" content="Track your fitness goals privately with Google Drive sync">
+    <meta name="description" content="Track your fitness goals with Google Drive sync">
     <meta name="theme-color" content="#2563eb">
     
     <!-- PWA Icons -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
-    
-    <!-- Google APIs -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
     
     <style>
         * {
@@ -84,16 +80,33 @@
             background: #3367d6;
         }
 
+        .google-signin-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
         .sync-status {
             background: #dcfce7;
             color: #166534;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             font-size: 0.875rem;
-            display: inline-flex;
+            display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
             margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .sync-status.warning {
+            background: #fefbf2;
+            color: #d97706;
         }
 
         .weekly-summary {
@@ -449,27 +462,6 @@
             text-align: center;
             font-size: 0.9rem;
         }
-
-        .loading {
-            text-align: center;
-            color: #6b7280;
-            padding: 2rem;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 1.5rem;
-            height: 1.5rem;
-            border: 3px solid #f3f4f6;
-            border-radius: 50%;
-            border-top-color: #2563eb;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 0.5rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
         
         /* Mobile optimizations */
         @media (max-width: 640px) {
@@ -527,7 +519,7 @@
         </div>
 
         <!-- Google Auth -->
-        <div id="googleAuth" class="google-auth">
+        <div id="googleAuth" class="google-auth hidden">
             <div style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">🔐 Secure Google Drive Sync</div>
             <div style="color: #6b7280; margin-bottom: 1rem;">Connect to Google Drive to sync your data across all devices and never lose your progress!</div>
             <button id="googleSignIn" class="google-signin-btn">
@@ -538,7 +530,7 @@
 
         <!-- Sync Status -->
         <div id="syncStatus" class="sync-status">
-            <span>📱</span>
+            <span>⏳</span>
             <span id="syncText">Loading...</span>
         </div>
         
@@ -670,6 +662,10 @@
         </div>
     </div>
 
+    <!-- Google APIs - Load after page -->
+    <script src="https://apis.google.com/js/api.js" onload="handleGapiLoad()"></script>
+    <script src="https://accounts.google.com/gsi/client" onload="handleGsiLoad()"></script>
+
     <script>
         // Create and register manifest dynamically
         const manifestData = {
@@ -712,20 +708,219 @@
         const GOAL_START = new Date('2025-09-01');
         const GOAL_END = new Date('2026-09-01');
 
-        // State
-        let exercises = [];
-        let showForm = false;
-        let isSignedIn = false;
-        let spreadsheetId = null;
-
         // Google API Configuration
         const CLIENT_ID = '407758853774-p84sf4gjbov52st5smrj8qhg80d1k21v.apps.googleusercontent.com';
         const API_KEY = 'AIzaSyA9HTdoyDG1ObD8FjsS4ewCQfL6wc4Bzmo';
         const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
-        // Note: For production, you'd need actual Google API credentials
-        // For now, this will work with localStorage as fallback
+        // State
+        let exercises = [];
+        let showForm = false;
+        let isSignedIn = false;
+        let spreadsheetId = null;
+        let gapiLoaded = false;
+        let gsiLoaded = false;
+        let tokenClient = null;
+
+        // Google API loading handlers
+        function handleGapiLoad() {
+            gapiLoaded = true;
+            maybeEnableGoogleFeatures();
+        }
+
+        function handleGsiLoad() {
+            gsiLoaded = true;
+            maybeEnableGoogleFeatures();
+        }
+
+        // Initialize Google features when both APIs are loaded
+        async function maybeEnableGoogleFeatures() {
+            if (gapiLoaded && gsiLoaded) {
+                try {
+                    await initializeGoogleAPI();
+                } catch (error) {
+                    console.error('Failed to initialize Google APIs:', error);
+                    updateSyncStatus('warning', '⚠️ Google Drive unavailable - using local storage');
+                }
+            }
+        }
+
+        // Initialize Google API
+        async function initializeGoogleAPI() {
+            await gapi.load('client', async () => {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: handleAuthResponse,
+                });
+
+                // Check for existing token
+                const token = localStorage.getItem('google_access_token');
+                if (token) {
+                    gapi.client.setToken({ access_token: token });
+                    isSignedIn = true;
+                    await loadFromGoogleSheets();
+                } else {
+                    // Show Google auth option
+                    document.getElementById('googleAuth').classList.remove('hidden');
+                    updateSyncStatus('normal', '📱 Ready - Connect Google Drive for sync');
+                }
+            });
+        }
+
+        // Handle Google auth response
+        function handleAuthResponse(resp) {
+            if (resp.error !== undefined) {
+                console.error('Auth error:', resp.error);
+                updateSyncStatus('error', '❌ Google authorization failed');
+                return;
+            }
+
+            localStorage.setItem('google_access_token', resp.access_token);
+            isSignedIn = true;
+            document.getElementById('googleAuth').classList.add('hidden');
+            updateSyncStatus('normal', '✅ Connecting to Google Drive...');
+            
+            createSpreadsheetIfNeeded();
+        }
+
+        // Google Sign In
+        document.getElementById('googleSignIn').addEventListener('click', () => {
+            if (tokenClient) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                updateSyncStatus('error', '❌ Google Drive not ready - refresh page');
+            }
+        });
+
+        // Create or load Google Sheet
+        async function createSpreadsheetIfNeeded() {
+            const savedSpreadsheetId = localStorage.getItem('fitness_spreadsheet_id');
+            
+            if (savedSpreadsheetId) {
+                spreadsheetId = savedSpreadsheetId;
+                await loadFromGoogleSheets();
+                return;
+            }
+
+            try {
+                updateSyncStatus('normal', '📊 Creating Google Sheet...');
+                
+                const response = await gapi.client.sheets.spreadsheets.create({
+                    resource: {
+                        properties: {
+                            title: 'Fitness Tracker Data'
+                        },
+                        sheets: [{
+                            properties: {
+                                title: 'Exercise Log'
+                            }
+                        }]
+                    }
+                });
+
+                spreadsheetId = response.result.spreadsheetId;
+                localStorage.setItem('fitness_spreadsheet_id', spreadsheetId);
+
+                // Add headers
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: spreadsheetId,
+                    range: 'Exercise Log!A1:D1',
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [['Date', 'Exercise Type', 'Amount', 'Timestamp']]
+                    }
+                });
+
+                await loadFromGoogleSheets();
+                updateSyncStatus('normal', '☁️ Synced with Google Drive');
+
+            } catch (error) {
+                console.error('Error creating spreadsheet:', error);
+                updateSyncStatus('error', '❌ Failed to create Google Sheet');
+            }
+        }
+
+        // Load data from Google Sheets
+        async function loadFromGoogleSheets() {
+            if (!spreadsheetId) return;
+
+            try {
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: spreadsheetId,
+                    range: 'Exercise Log!A2:D'
+                });
+
+                if (response.result.values) {
+                    exercises = response.result.values.map(row => ({
+                        id: new Date(row[3]).getTime(),
+                        date: row[0],
+                        type: row[1],
+                        amount: parseFloat(row[2]),
+                        timestamp: row[3]
+                    }));
+                }
+
+                updateUI();
+                updateSyncStatus('normal', '☁️ Synced with Google Drive');
+                
+            } catch (error) {
+                console.error('Error loading from sheets:', error);
+                updateSyncStatus('warning', '⚠️ Sync warning - using local data');
+                loadData(); // Fallback to local
+            }
+        }
+
+        // Save to Google Sheets
+        async function saveToGoogleSheets(newExercise) {
+            if (!spreadsheetId || !isSignedIn) {
+                saveData(); // Fallback to local
+                return;
+            }
+
+            try {
+                await gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId: spreadsheetId,
+                    range: 'Exercise Log!A:D',
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [[
+                            newExercise.date,
+                            newExercise.type,
+                            newExercise.amount,
+                            newExercise.timestamp
+                        ]]
+                    }
+                });
+
+                updateSyncStatus('normal', '✅ Saved to Google Drive');
+                
+            } catch (error) {
+                console.error('Error saving to sheets:', error);
+                updateSyncStatus('warning', '⚠️ Saved locally (sync failed)');
+                saveData(); // Fallback
+            }
+        }
+
+        // Update sync status
+        function updateSyncStatus(type, message) {
+            const statusElement = document.getElementById('syncStatus');
+            const textElement = document.getElementById('syncText');
+            
+            // Reset classes
+            statusElement.className = 'sync-status';
+            if (type === 'error') statusElement.classList.add('error');
+            if (type === 'warning') statusElement.classList.add('warning');
+            
+            textElement.textContent = message;
+            console.log('Status:', message);
+        }
 
         // PWA Installation
         let deferredPrompt;
@@ -746,30 +941,13 @@
             installPrompt.classList.add('hidden');
         });
 
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:text/javascript,console.log("SW registered");');
-        }
-
-        // Google Auth (Mock implementation for demo)
-        document.getElementById('googleSignIn').addEventListener('click', async () => {
-            // In production, this would handle actual Google OAuth
-            // For demo, we'll simulate successful sign-in
-            document.getElementById('googleAuth').classList.add('hidden');
-            document.getElementById('syncStatus').classList.remove('hidden');
-            isSignedIn = true;
-            loadData();
-        });
-
         // Date utilities with timezone fix
         function formatDateForInput(date) {
-            // Fix timezone issue by using local date
             const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
             return localDate.toISOString().split('T')[0];
         }
 
         function parseInputDate(dateString) {
-            // Parse date as local date to avoid timezone shifts
             const [year, month, day] = dateString.split('-');
             return new Date(year, month - 1, day);
         }
@@ -778,7 +956,7 @@
         function getWeekStart(date) {
             const d = new Date(date);
             const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
             return new Date(d.setDate(diff));
         }
 
@@ -786,7 +964,6 @@
             const today = new Date();
             const currentMonday = getWeekStart(today);
             
-            // Get the previous completed week (last Monday to last Sunday)
             const lastWeekMonday = new Date(currentMonday);
             lastWeekMonday.setDate(lastWeekMonday.getDate() - 7);
             
@@ -802,11 +979,7 @@
 
         function calculateWeeklyProgress() {
             const weekInfo = getCurrentWeekSummary();
-            const weeklyTotals = {
-                running: 0,
-                pushups: 0,
-                squats: 0
-            };
+            const weeklyTotals = { running: 0, pushups: 0, squats: 0 };
 
             exercises.forEach(exercise => {
                 const exerciseDate = parseInputDate(exercise.date);
@@ -819,7 +992,7 @@
             Object.keys(GOALS).forEach(type => {
                 const actual = weeklyTotals[type];
                 const target = GOALS[type].weeklyTarget;
-                const buffer = target * 0.05; // 5% buffer
+                const buffer = target * 0.05;
                 
                 let status, statusClass, message;
                 
@@ -845,7 +1018,7 @@
             return { weekInfo, weeklyStatuses };
         }
 
-        // Load data (localStorage fallback when not signed in to Google)
+        // Load local data
         function loadData() {
             const savedData = localStorage.getItem('fitness-tracker-data');
             if (savedData) {
@@ -854,24 +1027,17 @@
             updateUI();
         }
 
-        // Save data (localStorage fallback)
+        // Save local data
         function saveData() {
             localStorage.setItem('fitness-tracker-data', JSON.stringify(exercises));
-            // In production, this would also sync to Google Sheets
         }
 
         // Calculate progress
         function calculateProgress() {
-            const progress = {
-                running: 0,
-                pushups: 0,
-                squats: 0
-            };
-
+            const progress = { running: 0, pushups: 0, squats: 0 };
             exercises.forEach(exercise => {
                 progress[exercise.type] += exercise.amount;
             });
-
             return progress;
         }
 
@@ -976,7 +1142,7 @@
             document.getElementById('amountInput').placeholder = `Enter ${unit}`;
         });
 
-        document.getElementById('saveButton').addEventListener('click', () => {
+        document.getElementById('saveButton').addEventListener('click', async () => {
             const date = document.getElementById('dateInput').value;
             const type = document.getElementById('typeSelect').value;
             const amount = parseFloat(document.getElementById('amountInput').value);
@@ -988,14 +1154,20 @@
 
             const newExercise = {
                 id: Date.now(),
-                date: date, // Store as YYYY-MM-DD string
+                date: date,
                 type: type,
                 amount: amount,
                 timestamp: new Date().toISOString()
             };
 
             exercises.push(newExercise);
-            saveData();
+            
+            if (isSignedIn) {
+                await saveToGoogleSheets(newExercise);
+            } else {
+                saveData();
+            }
+            
             updateUI();
 
             // Reset form
@@ -1018,14 +1190,18 @@
             document.getElementById('amountInput').value = '';
         });
 
-        // Initialize
+        // Initialize app
         window.addEventListener('load', () => {
-            if (typeof gapi !== 'undefined') {
-                initializeGoogleAPIs();
-            } else {
-                // Fallback if Google APIs don't load
-                loadData();
-            }
+            // Always load local data first
+            loadData();
+            updateSyncStatus('normal', '📱 Using local storage');
+            
+            // Google APIs will initialize when loaded
+            setTimeout(() => {
+                if (!gapiLoaded && !gsiLoaded) {
+                    updateSyncStatus('warning', '📱 Local storage only (Google Drive unavailable)');
+                }
+            }, 5000);
         });
 
         // Prevent zoom on input focus (iOS)
