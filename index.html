@@ -11,24 +11,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="data:application/json,{
-        'name': 'My Fitness Tracker',
-        'short_name': 'Fitness',
-        'description': 'Track your fitness goals privately',
-        'start_url': '/',
-        'display': 'standalone',
-        'background_color': '#ffffff',
-        'theme_color': '#2563eb',
-        'icons': [
-            {
-                'src': 'data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><text y=\".9em\" font-size=\"90\">💪</text></svg>',
-                'sizes': '192x192',
-                'type': 'image/svg+xml'
-            }
-        ]
-    }">
-    
     <style>
         * {
             margin: 0;
@@ -84,7 +66,7 @@
         
         .goal-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
         }
@@ -352,6 +334,16 @@
             margin-top: 0.5rem;
         }
         
+        .manual-install {
+            background: #f59e0b;
+            color: white;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
         /* Mobile optimizations */
         @media (max-width: 640px) {
             body {
@@ -377,6 +369,10 @@
                 padding-top: env(safe-area-inset-top);
                 padding-bottom: env(safe-area-inset-bottom);
             }
+            
+            .manual-install {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -386,6 +382,15 @@
         <div id="installPrompt" class="install-prompt hidden">
             <div>📱 Install this app on your phone for easy access!</div>
             <button id="installButton" class="install-button">Install App</button>
+        </div>
+        
+        <!-- Manual Install Instructions -->
+        <div class="manual-install">
+            <div><strong>📱 Install on your phone:</strong></div>
+            <div style="margin-top: 0.5rem;">
+                <strong>iPhone:</strong> Tap Share (⬆️) → "Add to Home Screen"<br>
+                <strong>Android:</strong> Menu (⋮) → "Add to Home Screen" or "Install App"
+            </div>
         </div>
         
         <!-- Header -->
@@ -508,6 +513,37 @@
     </div>
 
     <script>
+        // Create and register manifest dynamically
+        const manifestData = {
+            name: "My Fitness Tracker",
+            short_name: "Fitness",
+            description: "Track your fitness goals privately",
+            start_url: "./",
+            display: "standalone",
+            background_color: "#ffffff",
+            theme_color: "#2563eb",
+            icons: [
+                {
+                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>",
+                    sizes: "192x192",
+                    type: "image/svg+xml"
+                },
+                {
+                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>",
+                    sizes: "512x512",
+                    type: "image/svg+xml"
+                }
+            ]
+        };
+
+        // Create manifest link
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = manifestURL;
+        document.head.appendChild(manifestLink);
+
         // Goals configuration
         const GOALS = {
             running: { target: 500, unit: 'miles', label: 'Running' },
