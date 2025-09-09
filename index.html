@@ -11,7 +11,6 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 
   <style>
-    /* --- styles unchanged for brevity (same as before) --- */
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#eff6ff 0%,#f3e8ff 100%);min-height:100vh;padding:1rem;color:#1f2937;overflow-x:hidden}
     .container{max-width:100%;margin:0 auto}
@@ -82,9 +81,8 @@
   </style>
 
   <script>
-    /******** Manifest: use absolute start_url (valid for blob base) ********/
     (function attachManifest(){
-      const startUrl = new URL(location.pathname, location.origin).toString(); // e.g., https://domain/app/
+      const startUrl = new URL(location.pathname, location.origin).toString();
       const manifest = {
         name: "My Fitness Tracker",
         short_name: "Fitness",
@@ -109,7 +107,6 @@
 </head>
 <body>
   <div class="container">
-    <!-- Install Prompt -->
     <div id="installPrompt" class="install-prompt hidden">
       <div>📱 Install this app on your phone for easy access!</div>
       <button id="installButton" class="install-button">Install App</button>
@@ -123,29 +120,24 @@
       </div>
     </div>
 
-    <!-- Google Auth -->
     <div id="googleAuth" class="google-auth hidden">
       <div style="font-size:1.125rem;font-weight:600;margin-bottom:.5rem;">🔐 Secure Google Drive Sync</div>
       <div style="color:#6b7280;margin-bottom:1rem;">Connect to Google Drive to sync your data across all devices and never lose your progress!</div>
       <button id="googleSignIn" class="google-signin-btn"><span>📊</span><span>Connect to Google Drive</span></button>
     </div>
 
-    <!-- Sync Status -->
     <div id="syncStatus" class="sync-status"><span>⏳</span><span id="syncText">Loading...</span></div>
 
-    <!-- Header -->
     <div class="header">
       <h1>💪 My Fitness Goals 2025-2026</h1>
       <p id="dateInfo">Loading...</p>
     </div>
 
-    <!-- Weekly Summary -->
     <div id="weeklySummary" class="weekly-summary hidden">
       <div class="weekly-title"><span>📊</span><span id="weeklyTitle">Weekly Summary</span></div>
       <div id="weeklyContent"></div>
     </div>
 
-    <!-- Goals Grid -->
     <div class="goals-grid">
       <div class="goal-card">
         <div class="goal-header"><div class="goal-title">🏃‍♀️ Running</div><div class="goal-icon">🎯</div></div>
@@ -184,10 +176,8 @@
       </div>
     </div>
 
-    <!-- Log Button -->
     <button id="logButton" class="log-button"><span>➕</span><span>Log Exercise</span></button>
 
-    <!-- Form -->
     <div id="formContainer" class="form-container hidden">
       <h3 class="form-title">Log Your Exercise</h3>
       <div class="form-group">
@@ -212,7 +202,6 @@
       </div>
     </div>
 
-    <!-- Recent Entries -->
     <div id="recentEntries" class="recent-entries hidden">
       <div class="recent-header"><span>📈</span><h3 class="recent-title">Recent Entries</h3></div>
       <div id="entriesList"></div>
@@ -223,7 +212,6 @@
   </div>
 
   <script>
-    /************ UI + app state (unchanged core logic) ************/
     function updateSyncStatus(kind='normal', text=''){
       const el = document.getElementById('syncStatus');
       const txt = document.getElementById('syncText');
@@ -338,14 +326,13 @@
       setTimeout(()=>{ if(!window.gapi && !window.google){ updateSyncStatus('warning','📱 Local storage only (Google Drive unavailable)'); } },5000);
     });
 
-    /************ Google APIs: load dynamically AFTER handlers exist ************/
+    /************ Google APIs: YOUR ACTUAL CREDENTIALS ************/
     const CLIENT_ID = '407758853774-p84sf4gjbov52st5smrj8qhg80d1k21v.apps.googleusercontent.com';
     const API_KEY = 'AIzaSyA9HTdoyDG1ObD8FjsS4ewCQfL6wc4Bzmo';
     const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
     let tokenClient=null;
 
-    // Expose flags so loaders can flip them safely
     window.__gapiLoaded = false;
     window.__gsiLoaded  = false;
     window.__isSignedIn = false;
@@ -355,11 +342,9 @@
       initializeGoogleAPI();
     }
 
-    // Define handlers BEFORE injecting scripts
     window.handleGapiLoad = function(){ window.__gapiLoaded = true; maybeEnableGoogleFeatures(); };
     window.handleGsiLoad  = function(){ window.__gsiLoaded  = true; maybeEnableGoogleFeatures(); };
 
-    // Inject google scripts with onload wired to our handlers
     (function loadGoogleScripts(){
       const s1=document.createElement('script');
       s1.src='https://apis.google.com/js/api.js';
@@ -443,22 +428,46 @@
       let id = localStorage.getItem('fitness_spreadsheet_id');
       if(!id){
         try{
-          updateSyncStatus('normal','📊 Creating Google Sheet…');
-          const res=await gapi.client.sheets.spreadsheets.create({
-            resource:{ properties:{title:'Fitness Tracker Data'}, sheets:[{properties:{title:'Exercise Log'}}] }
+          updateSyncStatus('normal','🔍 Looking for existing fitness spreadsheet…');
+          
+          // First, search for existing "Fitness Tracker Data" spreadsheets
+          const searchResponse = await gapi.client.request({
+            path: 'https://www.googleapis.com/drive/v3/files',
+            params: {
+              q: "name='Fitness Tracker Data' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+              orderBy: 'createdTime desc'
+            }
           });
-          id = res.result.spreadsheetId; spreadsheetId=id;
+          
+          if(searchResponse.result.files && searchResponse.result.files.length > 0){
+            // Found existing spreadsheet - use the most recent one
+            id = searchResponse.result.files[0].id;
+            console.log('Found existing spreadsheet:', id);
+            updateSyncStatus('normal','📊 Found existing spreadsheet — connecting…');
+          } else {
+            // No existing spreadsheet - create new one
+            updateSyncStatus('normal','📊 Creating new Google Sheet…');
+            const res=await gapi.client.sheets.spreadsheets.create({
+              resource:{ properties:{title:'Fitness Tracker Data'}, sheets:[{properties:{title:'Exercise Log'}}] }
+            });
+            id = res.result.spreadsheetId;
+            console.log('Created new spreadsheet:', id);
+            
+            // Add headers to new spreadsheet
+            await gapi.client.sheets.spreadsheets.values.update({
+              spreadsheetId:id, range:'Exercise Log!A1:D1', valueInputOption:'RAW',
+              resource:{ values:[['Date','Exercise Type','Amount','Timestamp']] }
+            });
+          }
+          
+          spreadsheetId = id;
           localStorage.setItem('fitness_spreadsheet_id', id);
-          await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId:id, range:'Exercise Log!A1:D1', valueInputOption:'RAW',
-            resource:{ values:[['Date','Exercise Type','Amount','Timestamp']] }
-          });
-          updateSyncStatus('normal','☁️ Sheet created — syncing…');
           await safeLoadFromGoogleSheets();
+          
         }catch(err){
-          console.error('Create sheet error:', err);
+          console.error('Spreadsheet setup error:', err);
           if(needsRefresh(err)){ await refreshTokenOnce(); return ensureSpreadsheetThenLoad(); }
-          updateSyncStatus('error','❌ Failed to create Google Sheet');
+          updateSyncStatus('error','❌ Failed to setup Google Sheet');
         }
       }else{
         spreadsheetId=id;
@@ -511,4 +520,3 @@
   </script>
 </body>
 </html>
-
